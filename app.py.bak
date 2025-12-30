@@ -1,0 +1,82 @@
+import streamlit as st
+import pandas as pd
+import joblib
+
+# --- 页面设置 ---
+st.set_page_config(page_title="Lung Cancer Mortality Risk", layout="centered")
+
+# --- 加载模型 ---
+@st.cache_resource
+def load_model():
+    package = joblib.load('rf_lung_cancer_model.pkl')
+    return package['model'], package['features']
+
+try:
+    model, feature_names = load_model()
+except FileNotFoundError:
+    st.error("请先运行 model_train.py 生成模型文件。")
+    st.stop()
+
+st.sidebar.header("输入临床参数")
+
+def user_input_features():
+    # 1. T Stage (修正为 T_Stage)
+    # 这里的 Value (1, 2, 3...) 必须对应你在 CSV 中 T_Stage 列的数值
+    t_stage_options = {
+        1: "T1-2 (≤3cm)",
+        2: "T2-3 (3-5cm)",
+        3: "T3-4 (5-7cm)",
+        4: "T4-5 (>7cm)"
+    }
+    # 如果你的CSV里 T_Stage 是 1,2,3,4 这样的数字，这里就用 selectbox
+    t_stage = st.sidebar.selectbox(
+        "T Stage", 
+        options=[1, 2, 3, 4], 
+        format_func=lambda x: t_stage_options.get(x, f"Stage {x}")
+    )
+    
+    # 2. Airway
+    airway = st.sidebar.radio("Airway Dissemination", options=[0, 1], format_func=lambda x: "无" if x==0 else "有")
+    
+    # 3. Pleural
+    pleural = st.sidebar.radio("Pleural Invasion", options=[0, 1], format_func=lambda x: "无" if x==0 else "有")
+    
+    # 4. Ki-67 (1=Low Risk/High Val?, 2=High Risk/Low Val?) -> 根据你的数据保持一致
+    ki67 = st.sidebar.selectbox("Ki-67", options=[1, 2], format_func=lambda x: "≥30% (Low Risk)" if x==1 else "<30% (High Risk)")
+    
+    # 5. BMI
+    bmi = st.sidebar.selectbox("BMI", options=[1, 2, 3], format_func=lambda x: {1:"Normal", 2:"Overweight", 3:"Obese"}[x])
+    
+    # 6. Bilirubin
+    bilirubin = st.sidebar.number_input("Direct Bilirubin", value=3.5, step=0.1)
+    
+    # 组装数据 - 这里的 Key 必须和 model_train.py 中的 feature_cols 完全一致！
+    data = {
+        'T_Stage': t_stage,              # 修正点：Key 必须是 T_Stage
+        'Airway_dissemination': airway,
+        'Pleural_invasion': pleural,
+        'Ki_67': ki67,
+        'BMI': bmi,
+        'Direct_bilirubin': bilirubin
+    }
+    return pd.DataFrame([data])
+
+input_df = user_input_features()
+
+st.title("肺癌3年死亡风险预测")
+
+if st.button("计算风险"):
+    try:
+        # 自动对齐列顺序
+        input_data = input_df[feature_names]
+        
+        prob = model.predict_proba(input_data)[0][1]
+        st.write(f"预测结果：3年死亡概率为 **{prob*100:.2f}%**")
+        
+        if prob > 0.5:
+            st.error("高风险 (High Risk)")
+        else:
+            st.success("低风险 (Low Risk)")
+            
+    except Exception as e:
+        st.error(f"发生错误: {e}")
