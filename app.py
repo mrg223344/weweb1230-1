@@ -17,6 +17,9 @@ st.markdown("""
     .main { background-color: #f8f9fa; }
     .stButton>button { width: 100%; background-color: #ff4b4b; color: white; font-weight: bold; }
     .reportview-container .main .block-container { padding-top: 2rem; }
+    /* Smaller font for T Stage Definitions block */
+    .tstage-defs { font-size: 13px; line-height: 1.45; }
+    .tstage-defs h4 { font-size: 14px; margin-bottom: 6px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -40,11 +43,12 @@ with st.sidebar:
 
     # 1. T Stage
     st.subheader("🧬 Tumor Characteristics")
+    # Explicit T1, T2, T3, T4 labels
     t_stage_map = {
-        1: "T1-2 (≤ 3cm, Lobar bronchus)",
-        2: "T2-3 (3-5cm, Main bronchus)",
-        3: "T3-4 (5-7cm, Chest wall/Pericardium)",
-        4: "T4-5 (> 7cm, Mediastinum/Heart)"
+        1: "T1",
+        2: "T2",
+        3: "T3",
+        4: "T4"
     }
     t_stage = st.selectbox(
         "T Stage Assessment",
@@ -64,7 +68,8 @@ with st.sidebar:
     # 3. Biomarkers
     st.subheader("🩸 Biomarkers & History")
     
-    ki67_map = {1: "Low Risk (≥30%)", 2: "High Risk (<30%)"}
+    # Fixed Ki-67 labels: ≥30% is high expression, <30% is low expression
+    ki67_map = {1: "High Expression (≥30%)", 2: "Low Expression (<30%)"}
     ki67 = st.selectbox("Ki-67 Expression", options=[1, 2], format_func=lambda x: ki67_map[x])
     
     bmi_map = {1: "Normal (<25)", 2: "Overweight (25-30)", 3: "Obese (>30)"}
@@ -77,10 +82,8 @@ with st.sidebar:
 
 # --- 5. Main Dashboard ---
 
-# === [MODIFIED] Introduction Section Placed Here ===
 st.title("🫁 Lung Cancer Mortality Risk Calculator")
 
-# 使用容器或 Markdown 展示你提供的 Introduction
 st.markdown("""
 <div style="background-color: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px;">
     <h4>Introduction</h4>
@@ -117,13 +120,16 @@ else:
         st.info("👈 Please enter clinical parameters in the sidebar and click **Run Risk Prediction**.")
     else:
         try:
+            # Ensure feature order matches model's expected features
             final_input = input_data[feature_names]
             
             # Prediction
             prob_death = model.predict_proba(final_input)[0][1]
             prob_survival = 1 - prob_death
             prob_percent = prob_death * 100
-            
+            # clamp progress value to 0-100 and convert to int
+            progress_val = int(max(0, min(100, round(prob_percent))))
+
             # Results
             st.divider()
             st.subheader("📊 Prediction Results")
@@ -144,7 +150,7 @@ else:
             else:
                 color, msg = "red", "🚨 High Risk Profile"
 
-            st.progress(int(prob_percent))
+            st.progress(progress_val)
             
             # Interpretation Box
             st.markdown(f"""
@@ -161,3 +167,14 @@ else:
 
         except Exception as e:
             st.error(f"Prediction Error: {e}")
+
+# --- 6. T Stage Definitions (English) with smaller font ---
+st.markdown("""
+<div class="tstage-defs" style="background-color:#f7fbfc; padding:14px; border-radius:8px; margin-top:20px;">
+  <h4>T Stage Definitions</h4>
+  <p><b>T1</b>: Tumor ≤ 3 cm in greatest dimension; tumor invasion does not extend beyond the lobar bronchus.</p>
+  <p><b>T2</b>: Tumor &gt; 3 cm and ≤ 5 cm in greatest dimension; or any one of the following: invasion of the main bronchus but not involving the carina; invasion of the visceral pleura; associated obstructive pneumonia of the hilum or partial/complete lung atelectasis.</p>
+  <p><b>T3</b>: Tumor &gt; 5 cm and ≤ 7 cm in greatest dimension; or invasion of any one of the following structures: pleura, chest wall, phrenic nerve, or pericardium; or presence of a separate tumor nodule(s) in the same lobe.</p>
+  <p><b>T4</b>: Tumor &gt; 7 cm in greatest dimension; or, regardless of size, invasion of one or more of the following: mediastinum, heart, great vessels, trachea, recurrent laryngeal nerve, esophagus, vertebra, or diaphragm; or presence of separate tumor nodule(s) in different ipsilateral lobes.</p>
+</div>
+""", unsafe_allow_html=True)
