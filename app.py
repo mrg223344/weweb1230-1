@@ -88,15 +88,15 @@ st.markdown("""
 <div style="background-color: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px;">
     <h4>Introduction</h4>
     <p>
-        This web-based calculator was developed using a <b>Random Forest–based machine learning model</b>. 
+        This web-based calculator was developed using a <b>XGboost–based machine learning model</b>. 
         By inputting relevant clinical parameters, users can estimate the individualized <b>3-year mortality risk</b> for lung cancer patients.
     </p>
     <p>
         For patients classified as <b>high risk</b>, closer follow-up, nutritional optimization, and comprehensive management of prognostic factors may be warranted to improve long-term outcomes.
     </p>
     <p style="font-size: 0.9em; color: #555; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px;">
-        <i><b>Disclaimer:</b> This tool is intended for risk assessment only and should not replace clinical judgment. 
-        Final diagnosis and treatment decisions should be made by qualified physicians.</i>
+        <i><b>Disclaimer:</b> This calculator is an experimental research tool based on a single-center retrospective cohort. 
+        It has not undergone external validation and should not be used for diagnosis, treatment selection, prognosis counseling, or direct clinical decision-making. The results should be interpreted only for research and exploratory purposes.</i>
     </p>
 </div>
 """, unsafe_allow_html=True)
